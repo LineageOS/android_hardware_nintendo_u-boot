@@ -44,6 +44,9 @@
 	"kernel_addr_r=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
 	"fdtfile=" FDTFILE "\0" \
 	"fdt_addr_r=0x83000000\0" \
-	"ramdisk_addr_r=0x83420000\0"
-
+	"ramdisk_addr_r=0x83420000\0" \
+	"stdin=serial\0" \
+	"stdout=serial\0" \
+	"stderr=serial,vidconsole\0"
+	
 #endif /* _TEGRA210_COMMON_H_ */

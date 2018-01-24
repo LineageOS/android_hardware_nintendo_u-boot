@@ -1,0 +1,12 @@
+if TARGET_NX
+
+config SYS_BOARD
+	default "nx"
+
+config SYS_VENDOR
+	default "nintendo"
+
+config SYS_CONFIG_NAME
+	default "nx"
+
+endif
