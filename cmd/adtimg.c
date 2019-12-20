@@ -11,12 +11,24 @@
 #include <common.h>
 
 #define OPT_INDEX	"--index"
+#define OPT_ID		"--id"
+#define OPT_REV		"--rev"
 
 /*
  * Current/working DTB/DTBO Android image address.
  * Similar to 'working_fdt' variable in 'fdt' command.
  */
 static ulong working_img;
+
+static int adtimg_env_set_hex(const char *varname, ulong value)
+{
+	if (env_set_hex(varname, value)) {
+		printf("Error: Can't set '%s' to 0x%lx\n", varname, value);
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
 
 static int do_adtimg_addr(struct cmd_tbl *cmdtp, int flag, int argc,
 			  char *const argv[])
@@ -164,6 +176,107 @@ static int adtimg_get_dt_by_index(int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
+static int adtimg_getopt_fields(int argc, char * const argv[],
+				struct dt_table_entry *dte,
+				char **avar, char **svar, char **ivar)
+{
+	bool found = false;
+
+	if (!dte || !argv || !avar || !svar || !ivar)
+		return CMD_RET_FAILURE;
+
+	for (int i = 0; i < argc; i++) {
+		char *opt = argv[i];
+		struct adtimg_opt_dt_map {
+			char *optname;
+			u32 *optptr;
+		} t[] = {
+			{ OPT_ID, &dte->id },
+			{ OPT_REV, &dte->rev },
+		};
+		int j, ret, cnt = ARRAY_SIZE(t);
+
+		for (j = 0; j < cnt; j++) {
+			char *name = t[j].optname;
+			u32 *ptr = t[j].optptr;
+
+			if (!strncmp(argv[i], name, strlen(name))) {
+				ret = adtimg_getopt_u32(opt, name, ptr);
+				if (ret != CMD_RET_SUCCESS)
+					return ret;
+
+				if (!*ptr) {
+					/*
+					 * 'Zero' means 'unused', hence
+					 * forbid zero values in user input
+					 */
+					printf("Error: Zero in '%s'\n", opt);
+					return CMD_RET_FAILURE;
+				}
+
+				found = true;
+				break;
+			}
+		}
+
+		if (j < cnt)
+			continue;
+
+		if (*opt == '-') {
+			printf("Error: Option '%s' not supported\n", opt);
+			return CMD_RET_FAILURE;
+		}
+
+		if (!*avar) {
+			*avar = opt;
+		} else if (!*svar) {
+			*svar = opt;
+		} else if (!*ivar) {
+			*ivar = opt;
+		} else {
+			printf("Error: Option '%s' not expected\n", opt);
+			return CMD_RET_FAILURE;
+		}
+	}
+
+	if (!found) {
+		printf("Error: No --option given (check usage)\n");
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+static int adtimg_get_dt_by_field(int argc, char * const argv[])
+{
+	char *avar = NULL, *svar = NULL, *ivar = NULL;
+	struct dt_table_entry dte = {0};
+	ulong addr;
+	u32 sz, idx;
+	int ret;
+
+	ret = adtimg_getopt_fields(argc, argv, &dte, &avar, &svar, &ivar);
+	if (ret != CMD_RET_SUCCESS)
+		return ret;
+
+	if (!android_dt_get_fdt_by_field(working_img, &dte, &addr, &sz, &idx))
+		return CMD_RET_FAILURE;
+
+	if (avar && adtimg_env_set_hex(avar, addr) != CMD_RET_SUCCESS)
+		return CMD_RET_FAILURE;
+
+	if (svar && adtimg_env_set_hex(svar, sz) != CMD_RET_SUCCESS)
+		return CMD_RET_FAILURE;
+
+	if (ivar && adtimg_env_set_hex(ivar, idx) != CMD_RET_SUCCESS)
+		return CMD_RET_FAILURE;
+
+	if (!avar)
+		printf("0x%lx, 0x%x (%d), 0x%x (%d)\n", addr, sz, sz, idx, idx);
+
+	return CMD_RET_SUCCESS;
+}
+
 static int adtimg_get_dt(int argc, char *const argv[])
 {
 	if (argc < 2) {
@@ -178,8 +291,7 @@ static int adtimg_get_dt(int argc, char *const argv[])
 	if (!strncmp(argv[0], OPT_INDEX, sizeof(OPT_INDEX) - 1))
 		return adtimg_get_dt_by_index(argc, argv);
 
-	printf("Error: Option '%s' not supported\n", argv[0]);
-	return CMD_RET_FAILURE;
+	return adtimg_get_dt_by_field(argc, argv);
 }
 
 static int do_adtimg_get(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -235,10 +347,14 @@ U_BOOT_CMD(
 	"addr <addr> - Set image location to <addr>\n"
 	"adtimg dump        - Print out image contents\n"
 	"adtimg get dt --index=<index> [avar [svar]]         - Get DT address/size by index\n"
-	"\n"
+	"adtimg get dt --<fname>=<fval>... [avar [svar [ivar]]] - Get DT address/size/index\n"
+	"                                                         by field in dt_table_entry\n"
 	"Legend:\n"
 	"  - <addr>: DTB/DTBO image address (hex) in RAM\n"
 	"  - <index>: index (hex/dec) of desired DT in the image\n"
+	"  - <fname>: dt_table_entry field name. Supported values: id, rev\n"
+	"  - <fval>: field value (hex/dec) associated to <fname>\n"
 	"  - <avar>: variable name to contain DT address (hex)\n"
-	"  - <svar>: variable name to contain DT size (hex)"
+	"  - <svar>: variable name to contain DT size (hex)\n"
+	"  - <ivar>: variable name to contain DT index (hex)"
 );
