@@ -4,6 +4,7 @@
  * Minkyu Kang <mk7.kang@samsung.com>
  * Jaehoon Chung <jh80.chung@samsung.com>
  * Portions Copyright 2011-2019 NVIDIA Corporation
+ * Portions Copyright 2018-2022 CTCaer
  */
 
 #include <bouncebuf.h>
@@ -20,6 +21,8 @@
 #include <linux/err.h>
 #if defined(CONFIG_TEGRA30) || defined(CONFIG_TEGRA210)
 #include <asm/arch/clock.h>
+#include <asm/arch-tegra/ap.h>
+#include <asm/arch-tegra/gp_padctrl.h>
 #endif
 
 struct tegra_mmc_plat {
@@ -477,6 +480,8 @@ static void tegra_mmc_pad_init(struct tegra_mmc_priv *priv)
 	u16 clk_con;
 	int timeout;
 	int id = priv->mmc_id;
+	bool t210b01 = tegra_get_chip() == CHIPID_TEGRA210 &&
+		       tegra_get_chip_rev() == MAJORPREV_TEGRA210B01;
 
 	debug("%s: sdmmc address = %p, id = %d\n", __func__,
 		priv->reg, id);
@@ -490,7 +495,8 @@ static void tegra_mmc_pad_init(struct tegra_mmc_priv *priv)
 
 	val = readl(&priv->reg->sdmemcmppadctl);
 	val &= 0xFFFFFFF0;
-	val |= MEMCOMP_PADCTRL_VREF;
+	if (!t210b01)
+		val |= MEMCOMP_PADCTRL_VREF;
 	writel(val, &priv->reg->sdmemcmppadctl);
 
 	/* Disable SD Clock Enable before running auto-cal as per TRM */
@@ -501,7 +507,8 @@ static void tegra_mmc_pad_init(struct tegra_mmc_priv *priv)
 
 	val = readl(&priv->reg->autocalcfg);
 	val &= 0xFFFF0000;
-	val |= AUTO_CAL_PU_OFFSET | AUTO_CAL_PD_OFFSET;
+	if (!t210b01)
+		val |= AUTO_CAL_PU_OFFSET | AUTO_CAL_PD_OFFSET;
 	writel(val, &priv->reg->autocalcfg);
 	val |= AUTO_CAL_START | AUTO_CAL_ENABLE;
 	writel(val, &priv->reg->autocalcfg);
@@ -534,13 +541,13 @@ static void tegra_mmc_pad_init(struct tegra_mmc_priv *priv)
 	val = readl(&priv->reg->venspictl);	/* aka VENDOR_SYS_SW_CNTL */
 	val &= IO_TRIM_BYPASS_MASK;
 	if (id == PERIPH_ID_SDMMC1) {
-		tap_value = 4;			/* default */
+		tap_value = t210b01 ? 11 : 4;	/* default */
 		if (val)
-			tap_value = 3;
-		trim_value = 2;
+			tap_value = t210b01 ? 11 : 3;
+		trim_value = t210b01 ? 14 : 2;
 	} else {				/* SDMMC3 */
-		tap_value = 3;
-		trim_value = 3;
+		tap_value = t210b01 ? 11 : 3;
+		trim_value = t210b01 ? 15 : 3;
 	}
 
 	val = readl(&priv->reg->venclkctl);
