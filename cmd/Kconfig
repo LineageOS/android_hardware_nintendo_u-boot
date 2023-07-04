@@ -463,6 +463,12 @@ config CMD_IMLS
 	help
 	  List all images found in flash
 
+config CMD_INI
+	bool "ini"
+	default y
+	help
+	  Allows parsing of ini files to env
+
 config CMD_XIMG
 	bool "imxtract"
 	default y
