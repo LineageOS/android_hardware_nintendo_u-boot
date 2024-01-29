@@ -265,9 +265,12 @@
         "else echo -e Unknown Display ID: ${display_id}!; fi; " \
         "if test -n ${DHANDLE}; then echo Setting Display panel; fdt set /host1x/dsi nvidia,active-panel <$DHANDLE>; fi\0" \
     "get_fdt=" \
-        "part start mmc ${mmcdev} DTB dtb_start; " \
-        "part size mmc ${mmcdev} DTB dtb_size; " \
-        "mmc read ${fdt_staging_addr} ${dtb_start} ${dtb_size}; " \
+        "if load mmc 1:1 ${fdt_staging_addr} switchroot/android/nx-plat.dtimg; then " \
+            "echo Device Tree Image loaded; " \
+        "else; " \
+            "echo -e Device Tree Image read failed!; " \
+            "echo -e Rebooting in 10s..; sleep 10; reset; " \
+        "fi; " \
         "adtimg addr ${fdt_staging_addr}; " \
         "adtimg get dt --id=${dtid} dtaddr dtsize dtidx; " \
         "cp.b ${dtaddr} ${fdt_addr_r} ${dtsize};" \
@@ -354,16 +357,14 @@
         "fdt set / serial-number ${device_serial}; " \
         "setenv bootargs ${bootargs} androidboot.bootloader=${blver} androidboot.hardware=nx androidboot.hardware.sku=${variant} androidboot.serialno=${device_serial} androidboot.modem=none androidboot.dtb_idx=${dtidx};\0" \
     "bootcmd_android=" \
-        "part number mmc ${mmcdev} APP app_part_num; " \
-        "part uuid mmc ${mmcdev}:${app_part_num} app_part_uuid; " \
-        "part start mmc ${mmcdev} LNX lnx_start; " \
-        "part size mmc ${mmcdev} LNX lnx_size; " \
-        "mmc read ${boot_staging_addr} ${lnx_start} ${lnx_size}; " \
-        "setenv bootargs skip_initramfs ro rootwait root=PARTUUID=${app_part_uuid} ${bootargs} bluetooth.disable_ertm=1; " \
+        "part start mmc ${mmcdev} boot boot_start; " \
+        "part size mmc ${mmcdev} boot boot_size; " \
+        "mmc read ${boot_staging_addr} ${boot_start} ${boot_size}; " \
+        "setenv bootargs ro ${bootargs} bluetooth.disable_ertm=1; " \
         "bootm ${boot_staging_addr} ${boot_staging_addr} ${fdt_addr_r};\0" \
     "bootcmd_recovery=" \
-        "part start mmc ${mmcdev} SOS recovery_start; " \
-        "part size mmc ${mmcdev} SOS recovery_size; " \
+        "part start mmc ${mmcdev} recovery recovery_start; " \
+        "part size mmc ${mmcdev} recovery recovery_size; " \
         "mmc read ${recovery_staging_addr} ${recovery_start} ${recovery_size}; " \
         "bootm ${recovery_staging_addr} ${recovery_staging_addr} ${fdt_addr_r};\0" \
     "bootcmd=" \
