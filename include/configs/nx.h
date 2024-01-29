@@ -275,7 +275,7 @@
         "fdt resize 16384\0" \
     "bootcmd_common=" \
         "run set_variant; " \
-        "setenv bootargs init=/init nvdec_enabled=0 pcie_aspm=off vpr_resize tegra_fbmem=0x800000@0xf5a00000 loglevel=8; " \
+        "setenv bootargs init=/init nvdec_enabled=0 vpr_resize tegra_fbmem=0x800000@0xf5a00000 loglevel=8; " \
         "setenv bootargs ${bootargs} firmware_class.path=/vendor/firmware fbcon=map:${fbconsole} consoleblank=0; " \
         "setenv bootargs ${bootargs} pmc_r2p.action=${r2p_action} pmc_r2p.enabled=1 pmc_r2p.param1=${autoboot} pmc_r2p.param2=${autoboot_list}; " \
         "if test $emmc = 1; then run emmc_target; fi; " \
