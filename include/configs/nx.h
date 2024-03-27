@@ -24,7 +24,7 @@
     "defines=" \
         /* FDT IDS FOR VERIFICATION */ \
         "setenv odin_id               0x4F44494E; " \
-        "setenv modin_id              0x4F44494E; " \
+        "setenv modin_id              0x4F44494F; " \
         "setenv vali_id               0x56414C49; " \
         "setenv frig_id               0x46524947; " \
         /* STAGING ADDRESSES */ \
@@ -269,7 +269,7 @@
         "part size mmc ${mmcdev} dtb dtb_size; " \
         "mmc read ${fdt_staging_addr} ${dtb_start} ${dtb_size}; " \
         "adtimg addr ${fdt_staging_addr}; " \
-        "adtimg get dt --id=${dtid} --rev=${dtrev} dtaddr dtsize dtidx; " \
+        "adtimg get dt --id=${dtid} dtaddr dtsize dtidx; " \
         "cp.b ${dtaddr} ${fdt_addr_r} ${dtsize};" \
         "fdt addr ${fdt_addr_r} ${dtsize};" \
         "fdt resize 16384\0" \
