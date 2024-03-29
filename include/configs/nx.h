@@ -111,7 +111,7 @@
         /* V1 SWITCH */ \
         "if   test ${sku} = 0; then " \
             "setenv dtid ${odin_id}; " \
-            "setenv dtrev 0x0; " \
+            "setenv dtrev 0xa00; " \
             "setenv variant odin; " \
         /* V2 SWITCH */ \
         "elif test ${sku} = 1; then " \
@@ -121,12 +121,12 @@
         /* SWITCH LITE */ \
         "elif test ${sku} = 2; then " \
             "setenv dtid ${vali_id}; " \
-            "setenv dtrev 0x0; " \
+            "setenv dtrev 0xa00; " \
             "setenv variant vali; " \
         /* SWITCH OLED */ \
         "elif test ${sku} = 3; then " \
             "setenv dtid ${frig_id}; " \
-            "setenv dtrev 0x0; " \
+            "setenv dtrev 0xa00; " \
             "setenv variant frig; " \
         "fi; " \
         "echo SKU: ${variant} REV: ${dtrev}; " \
