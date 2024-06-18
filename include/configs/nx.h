@@ -212,20 +212,11 @@
         "fdt set /serial@70006040/joyconr status disabled; " \
         "fdt set /serial@70006200 status disabled; " \
         "fdt set /serial@70006200/joyconl status disabled;\0" \
-    "alarms_enable_overlay=" \
-        "echo -e Wakeup alarms enabled; " \
-        "fdt get value DHANDLE_PMC /pmc@7000e400 phandle; " \
-        "fdt get value DHANDLE_GPIO /gpio@6000d000 phandle; " \
-        /* PMC_WAKE_TYPE_EVENT = 0x1 */ \
-        /* PMC_TRIGGER_TYPE_HIGH = 0x100*/ \
-        "fdt set /rtc nvidia,pmc-wakeup <$DHANDLE_PMC 0x1 0x10000 0x100>; " \
-        /* TEGRA_GPIO(H, 5) --> 7*8 + 5 */ \
-        "fdt set /bluedroid_pm bluedroid_pm,host-wake-gpio <$DHANDLE_GPIO 61 0>; " \
-        "fdt set /bluedroid_pm interrupt-parent <$DHANDLE_GPIO>; " \
-        "fdt set /bluedroid_pm interrupts <61 0x01>; " \
-        /* TEGRA_GPIO(A, 2) --> 0*8 + 2 */ \
-        "fdt set /pcie@1003000 nvidia,wake-gpio <$DHANDLE_GPIO 2 0>; " \
-        "fdt set /brcmfmac_pcie_wlan nvidia,pmc-wakeup <$DHANDLE_PMC 0x1 0x1000 0x100>;\0" \
+    "alarms_disable_overlay=" \
+        "echo -e Wakeup alarms disabled; " \
+        "fdt set /rtc nvidia,pmc-wakeup <0>; " \
+        "fdt set /pcie@1003000 nvidia,wake-gpio <0>; " \
+        "fdt set /brcmfmac@0 nvidia,pmc-wakeup <0>;\0" \
     "vali_vlim_overlay=" \
         "echo VALI: voltage limits [${VLIM}, ${SOCLIM}]; " \
         "if test \"${VLIM}\" != 1070; then " \
@@ -334,7 +325,7 @@
         "if test ${jc_rail_disable} = 1; then run jc_rail_overlay; fi; " \
         "if test ${touch_skip_tuning} = 1; then run touch_overlay; fi; " \
         "if test ${wifi_disable_vht80} = 1; then run vht80_overlay; fi; " \
-        "if test ${alarms_enable} = 1; then run alarms_enable_overlay; fi; " \
+        "if test ${alarms_disable} = 1; then run alarms_disable_overlay; fi; " \
         "if test \"${loader_rev}\" != 0 -a ${ddr200_enable} = 1; then run ddr200_overlay; fi; " \
         "if test ${usb3_enable} = 0; then run usb3_overlay; else echo -e USB3 enabled; fi; " \
         /* Try to grab address from joycons, otherwise use defaults */ \
